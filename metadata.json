@@ -1,0 +1,7 @@
+{
+  "name": "LendGrower Portfolio Dashboard",
+  "description": "Comprehensive portfolio lending dashboard for managing borrowers, installment ledgers, capital, collector commissions, printable agreements, and daily collection sheets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

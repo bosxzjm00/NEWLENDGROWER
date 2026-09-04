@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #0b1120;
+    color: #94a3b8;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6366f1;
+}
+
+/* Calendar icon invert for dark mode */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+}
+
+/* Dark mode default styles */
+.card-bg {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  color: #94a3b8;
+}
+
+/* Light Mode Overrides (Sleek Interface) */
+.light-mode {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+}
+
+.light-mode main {
+  background-color: #f8fafc !important;
+}
+
+.light-mode header {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light-mode .card-bg {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04) !important;
+}
+
+.light-mode .text-white {
+  color: #0f172a !important;
+}
+
+.light-mode .text-gray-300 {
+  color: #334155 !important;
+}
+
+.light-mode .text-gray-400 {
+  color: #64748b !important;
+}
+
+.light-mode .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+.light-mode input,
+.light-mode select {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light-mode input:focus,
+.light-mode select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+.light-mode input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.2);
+}
+
+.light-mode table {
+  color: #334155 !important;
+}
+
+.light-mode th {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light-mode td {
+  border-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+.light-mode .bg-subtle-box {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Print Specific Rules */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  aside,
+  header,
+  .print-hide,
+  button:not(.print-allow),
+  .no-print {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    background-color: #ffffff !important;
+    overflow: visible !important;
+  }
+  .card-bg {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+  table, th, td {
+    border-color: #94a3b8 !important;
+    color: #000000 !important;
+  }
+  .text-white,
+  .text-cyan-400,
+  .text-indigo-400,
+  .text-emerald-400,
+  .text-amber-400,
+  .text-red-400,
+  .text-gray-300,
+  .text-gray-400 {
+    color: #000000 !important;
+  }
+}
+
