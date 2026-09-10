@@ -8,7 +8,7 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   borrowerId: string | null;
-  scheduleId: string | null;
+  scheduleId?: string | null;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -19,6 +19,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 }) => {
   const { borrowers, recordPayment } = useApp();
 
+  const [activeScheduleId, setActiveScheduleId] = useState<string | null>(null);
   const [amount, setAmount] = useState<number | ''>('');
   const [method, setMethod] = useState<PaymentMethod>('Cash');
   const [date, setDate] = useState(getTodayIsoString());
@@ -26,7 +27,25 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [notes, setNotes] = useState('');
 
   const borrower = borrowers.find((b) => b.id === borrowerId);
-  const schedule = borrower?.schedules.find((s) => s.id === scheduleId);
+
+  // Initialize or update active schedule
+  useEffect(() => {
+    if (isOpen && borrower && borrower.schedules.length > 0) {
+      if (scheduleId && borrower.schedules.some((s) => s.id === scheduleId)) {
+        setActiveScheduleId(scheduleId);
+      } else {
+        // Default to earliest unpaid or partially paid installment
+        const nextUnpaid = borrower.schedules.find((s) => s.status !== 'Paid');
+        setActiveScheduleId(nextUnpaid ? nextUnpaid.id : borrower.schedules[0].id);
+      }
+      setMethod('Cash');
+      setDate(getTodayIsoString());
+      setReference('');
+      setNotes('');
+    }
+  }, [isOpen, borrowerId, scheduleId, borrower]);
+
+  const schedule = borrower?.schedules.find((s) => s.id === activeScheduleId) || borrower?.schedules[0];
 
   const amountDue = schedule?.amount_due || 0;
   const alreadyPaid = schedule?.amount_paid || 0;
@@ -35,12 +54,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   useEffect(() => {
     if (isOpen && schedule) {
       setAmount(balance > 0 ? balance : 0);
-      setMethod('Cash');
-      setDate(getTodayIsoString());
-      setReference('');
-      setNotes('');
     }
-  }, [isOpen, scheduleId, balance]);
+  }, [isOpen, activeScheduleId, balance]);
 
   if (!isOpen || !borrower || !schedule) return null;
 
@@ -73,6 +88,28 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          {borrower.schedules.length > 1 && (
+            <div>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">
+                Installment Schedule
+              </label>
+              <select
+                value={schedule.id}
+                onChange={(e) => setActiveScheduleId(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+              >
+                {borrower.schedules.map((s) => {
+                  const rem = Math.max(0, s.amount_due - s.amount_paid);
+                  return (
+                    <option key={s.id} value={s.id}>
+                      #{s.installment_no} • Due {s.due_date} • {formatCurrency(s.amount_due)} (Bal: {formatCurrency(rem)}) {s.status === 'Paid' ? '✓ Paid' : s.status === 'Partial' ? '⏳ Partial' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+
           {/* Summary Breakdown Card */}
           <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 text-slate-600 dark:text-slate-300">
             <div className="flex justify-between items-center">

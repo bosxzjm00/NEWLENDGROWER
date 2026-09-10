@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
 import { ViewType, SettingsSection } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 import {
   LayoutDashboard,
   Users,
@@ -9,16 +10,15 @@ import {
   TrendingDown,
   BookOpen,
   Archive,
+  History,
   Settings,
   Sun,
   Moon,
   LogOut,
-  ChevronUp,
-  ChevronDown,
   CalendarCheck,
   Database,
   AlertTriangle,
-  FileSpreadsheet,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -32,37 +32,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
     themeMode,
     toggleThemeMode,
     logout,
+    currentUsername,
+    isMasterAdmin,
+    activeSettingsSection,
     setActiveSettingsSection,
     setSelectedLedgerBorrowerId,
   } = useApp();
-
-  const [settingsDropupOpen, setSettingsDropupOpen] = useState(false);
-  const dropupRef = useRef<HTMLDivElement>(null);
-
-  // Close dropup when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropupRef.current && !dropupRef.current.contains(event.target as Node)) {
-        setSettingsDropupOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleNavClick = (view: ViewType) => {
     if (view === 'ledger') {
       setSelectedLedgerBorrowerId(null);
     }
     setCurrentView(view);
-    setSettingsDropupOpen(false);
     if (onCloseMobile) onCloseMobile();
   };
 
   const handleSettingsSectionClick = (section: SettingsSection) => {
     setActiveSettingsSection(section);
     setCurrentView('settings');
-    setSettingsDropupOpen(false);
     if (onCloseMobile) onCloseMobile();
   };
 
@@ -98,9 +85,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
       icon: Archive,
     },
     {
+      id: 'activity-log' as ViewType,
+      label: 'Activity Log',
+      icon: History,
+    },
+    {
       id: 'ledger' as ViewType,
       label: 'Ledger',
       icon: BookOpen,
+    },
+    ...(isMasterAdmin
+      ? [
+          {
+            id: 'accounts' as ViewType,
+            label: 'Accounts',
+            icon: ShieldCheck,
+          },
+        ]
+      : []),
+    {
+      id: 'settings' as ViewType,
+      label: 'Settings',
+      icon: Settings,
     },
   ];
 
@@ -109,7 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
       id="app-aside"
       className="w-64 bg-slate-900 border-r border-slate-800/80 flex flex-col justify-between shrink-0 select-none h-screen z-30 transition-colors"
     >
-      <div>
+      <div className="flex-1 overflow-y-auto">
         {/* Brand Header */}
         <div className="p-5 border-b border-slate-800/80">
           <div className="flex items-center gap-3">
@@ -137,114 +143,111 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
               return (
-                <button
-                  key={item.id}
-                  id={`nav-${item.id}`}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`w-full sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-left ${
-                    isActive
-                      ? 'active bg-slate-800 text-white font-semibold shadow-xs border border-slate-700/60'
-                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
-                </button>
+                <div key={item.id} className="space-y-1">
+                  <button
+                    id={`nav-${item.id}`}
+                    onClick={() => handleNavClick(item.id)}
+                    className={`w-full sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-left cursor-pointer ${
+                      isActive
+                        ? 'active bg-slate-800 text-white font-semibold shadow-xs border border-slate-700/60'
+                        : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
+                    <span>{item.label}</span>
+                  </button>
+
+                  {item.id === 'settings' && currentView === 'settings' && (
+                    <div className="pl-7 pr-2 py-1 space-y-1">
+                      <button
+                        onClick={() => handleSettingsSectionClick('backup')}
+                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-colors text-left cursor-pointer ${
+                          activeSettingsSection === 'backup'
+                            ? 'bg-indigo-500/20 text-indigo-300 font-semibold'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                        }`}
+                      >
+                        <Database className="w-3 h-3 text-indigo-400 shrink-0" />
+                        <span>Backup & Restore</span>
+                      </button>
+                      <button
+                        onClick={() => handleSettingsSectionClick('supabase')}
+                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-colors text-left cursor-pointer ${
+                          activeSettingsSection === 'supabase'
+                            ? 'bg-cyan-500/20 text-cyan-300 font-semibold'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                        }`}
+                      >
+                        <Database className="w-3 h-3 text-cyan-400 shrink-0" />
+                        <span>Supabase Cloud Sync</span>
+                      </button>
+                      <button
+                        onClick={() => handleSettingsSectionClick('dcs')}
+                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-colors text-left cursor-pointer ${
+                          activeSettingsSection === 'dcs'
+                            ? 'bg-emerald-500/20 text-emerald-300 font-semibold'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                        }`}
+                      >
+                        <CalendarCheck className="w-3 h-3 text-emerald-400 shrink-0" />
+                        <span>Collection Sheet</span>
+                      </button>
+                      <button
+                        onClick={() => handleSettingsSectionClick('danger')}
+                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-colors text-left cursor-pointer ${
+                          activeSettingsSection === 'danger'
+                            ? 'bg-rose-500/20 text-rose-300 font-semibold'
+                            : 'text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10'
+                        }`}
+                      >
+                        <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
+                        <span>Danger Zone</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>
         </div>
       </div>
 
-      {/* Footer / Settings Section */}
+      {/* Footer Section */}
       <div className="p-3 border-t border-slate-800/80 space-y-2 bg-slate-950/40">
-        <div className="relative" ref={dropupRef}>
-          {settingsDropupOpen && (
-            <div
-              id="settings-dropup-menu"
-              className="absolute bottom-full mb-2 left-0 w-full bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl p-1.5 space-y-1 z-40 text-xs animate-in fade-in slide-in-from-bottom-2"
-            >
-              <button
-                onClick={() => handleSettingsSectionClick('backup')}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left"
-              >
-                <Database className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Backup & Restore</span>
-              </button>
+        <PWAInstallButton variant="sidebar" />
 
-              <button
-                onClick={() => handleSettingsSectionClick('dcs')}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left"
-              >
-                <CalendarCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Collection Sheet</span>
-              </button>
-
-              <button
-                onClick={toggleThemeMode}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left"
-              >
-                <div className="flex items-center gap-2">
-                  {themeMode === 'dark' ? (
-                    <Sun className="w-3.5 h-3.5 text-amber-400" />
-                  ) : (
-                    <Moon className="w-3.5 h-3.5 text-indigo-400" />
-                  )}
-                  <span>Theme Mode</span>
-                </div>
-                <span
-                  id="theme-mode-label"
-                  className="text-[10px] text-indigo-400 font-semibold uppercase px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20"
-                >
-                  {themeMode === 'dark' ? 'Dark' : 'Light'}
-                </span>
-              </button>
-
-              <div className="border-t border-slate-800 my-1"></div>
-
-              <button
-                onClick={() => handleSettingsSectionClick('danger')}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors text-left"
-              >
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                <span>Danger Zone</span>
-              </button>
-            </div>
-          )}
-
-          <button
-            id="nav-settings"
-            onClick={() => setSettingsDropupOpen((prev) => !prev)}
-            className={`w-full sidebar-item flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-colors ${
-              currentView === 'settings'
-                ? 'active bg-slate-800 text-white border border-slate-700/60 font-semibold shadow-xs'
-                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
-            }`}
-          >
-            <span className="flex items-center gap-2.5">
-              <Settings className="w-4 h-4 text-indigo-400" />
-              <span>Settings</span>
-            </span>
-            {settingsDropupOpen ? (
-              <ChevronDown className="w-3.5 h-3.5 text-indigo-400" />
+        <button
+          onClick={toggleThemeMode}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors text-left text-xs font-medium cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5">
+            {themeMode === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400" />
             ) : (
-              <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+              <Moon className="w-4 h-4 text-indigo-400" />
             )}
-          </button>
-        </div>
+            <span>Theme Mode</span>
+          </div>
+          <span
+            id="theme-mode-label"
+            className="text-[10px] text-indigo-400 font-semibold uppercase px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20"
+          >
+            {themeMode === 'dark' ? 'Dark' : 'Light'}
+          </span>
+        </button>
 
         {/* User profile & sign out */}
         <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 px-1">
           <div>
             <p className="text-slate-200 font-semibold text-[11px] leading-tight flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              Admin
+              {isMasterAdmin ? 'Master Admin' : 'User'}
             </p>
-            <p className="text-slate-400 truncate max-w-[110px] text-[10px]">bosxzjm</p>
+            <p className="text-slate-400 truncate max-w-[110px] text-[10px]">{currentUsername || 'bosxzjm'}</p>
           </div>
           <button
             onClick={logout}
-            className="text-slate-400 hover:text-rose-400 text-[11px] flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-slate-800"
+            className="text-slate-400 hover:text-rose-400 text-[11px] flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-slate-800 cursor-pointer"
             title="Sign Out"
           >
             <LogOut className="w-3.5 h-3.5" />

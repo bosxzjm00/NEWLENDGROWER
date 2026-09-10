@@ -17,17 +17,46 @@ export function formatDateToWords(dateStr: string | undefined | null): string {
   });
 }
 
-export function formatBorrowerTableDate(dateStr: string | undefined | null): string {
-  if (!dateStr) return '';
+export function formatBorrowerTableDateParts(dateStr: string | undefined | null): { date: string; day: string } {
+  if (!dateStr) return { date: '', day: '' };
   const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return String(dateStr);
+  if (isNaN(d.getTime())) return { date: String(dateStr), day: '' };
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
   const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
   const month = months[d.getMonth()];
   const dayNum = String(d.getDate()).padStart(2, '0');
   const year = d.getFullYear();
   const dayName = days[d.getDay()];
-  return `${month} ${dayNum}, ${year} ${dayName}`;
+  return { date: `${month} ${dayNum}, ${year}`, day: dayName };
+}
+
+export function formatBorrowerTableDate(dateStr: string | undefined | null): string {
+  if (!dateStr) return '';
+  const parts = formatBorrowerTableDateParts(dateStr);
+  return `${parts.date} ${parts.day}`.trim();
+}
+
+export function formatActivityDateTime(dateStr: string | undefined | null): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return String(dateStr);
+
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+  const month = months[d.getMonth()];
+  const day = String(d.getDate()).padStart(2, '0');
+  const year = d.getFullYear();
+  const dateFormatted = `${month} ${day}, ${year}`;
+
+  const hasTime = typeof dateStr === 'string' && (dateStr.includes('T') || dateStr.includes(':'));
+  if (hasTime) {
+    const timeFormatted = d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    return `${dateFormatted} • ${timeFormatted}`;
+  }
+  return dateFormatted;
 }
 
 export function getTodayIsoString(): string {

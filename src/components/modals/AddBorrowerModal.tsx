@@ -44,6 +44,7 @@ export const AddBorrowerModal: React.FC<AddBorrowerModalProps> = ({ isOpen, onCl
     if (!name.trim() || numAmount <= 0) return;
 
     const newBorrowerId = `b_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newLoanId = Math.floor(100000 + Math.random() * 900000).toString();
     const calc = calculateLoanInstallments(
       newBorrowerId,
       numAmount,
@@ -55,6 +56,7 @@ export const AddBorrowerModal: React.FC<AddBorrowerModalProps> = ({ isOpen, onCl
 
     const newBorrower: Borrower = {
       id: newBorrowerId,
+      loan_id: newLoanId,
       name: name.trim(),
       contact: contact.trim(),
       address: address.trim(),

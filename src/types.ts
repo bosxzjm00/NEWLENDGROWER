@@ -24,6 +24,7 @@ export type LoanFrequency = 'daily' | 'weekly' | 'monthly';
 
 export interface Borrower {
   id: string;
+  loan_id?: string; // 6-digit unique random loan ID
   name: string;
   contact: string;
   address: string;
@@ -84,12 +85,36 @@ export type ViewType =
   | 'collector-loans'
   | 'ledger'
   | 'past-ledger'
+  | 'activity-log'
   | 'statement'
   | 'agreement'
   | 'collection-sheet'
-  | 'settings';
+  | 'accounts'
+  | 'settings'
+  | 'borrower-portal';
+
+export interface UserAccount {
+  username: string;
+  password?: string;
+  role: 'admin' | 'user';
+  createdAt: string;
+  status: 'active' | 'inactive';
+}
 
 export type SettingsSection = 'backup' | 'supabase' | 'dcs' | 'danger';
+
+export type ActivityType = 'add_borrower' | 'payment' | 'delete' | 'edit_borrower';
+
+export interface ActivityLog {
+  id: string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  amount?: number;
+  date: string;
+  borrowerName?: string;
+  reference?: string;
+}
 
 export interface DashboardStats {
   totalCapitalPool: number;

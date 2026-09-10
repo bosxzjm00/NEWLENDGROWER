@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+  </defs>
+  <!-- Rounded Base Canvas -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  
+  <!-- Glowing Chart Bar 1 -->
+  <rect x="120" y="270" width="56" height="130" rx="16" fill="#38bdf8" opacity="0.85" />
+  
+  <!-- Glowing Chart Bar 2 -->
+  <rect x="200" y="210" width="56" height="190" rx="16" fill="#0ea5e9" opacity="0.95" />
+  
+  <!-- Glowing Chart Bar 3 -->
+  <rect x="280" y="150" width="56" height="250" rx="16" fill="url(#accentGrad)" />
+  
+  <!-- Trending Arrow Up Right -->
+  <path d="M120 250 L250 170 L340 100" fill="none" stroke="#f8fafc" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M280 100 L350 100 L350 170" fill="none" stroke="#f8fafc" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Currency / Seed Coin Sparkle -->
+  <circle cx="390" cy="270" r="32" fill="#10b981" />
+  <text x="390" y="282" font-family="Arial, sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle">₱</text>
+</svg>

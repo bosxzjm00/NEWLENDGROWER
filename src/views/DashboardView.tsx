@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDateToWords, getTodayIsoString } from '../utils/formatters';
 import {
@@ -14,6 +14,8 @@ import {
   BookOpen,
   ArrowUpRight,
   ShieldAlert,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -26,6 +28,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenAddCapital,
 }) => {
   const { stats, setCurrentView, setSelectedLedgerBorrowerId, borrowers } = useApp();
+
+  const [isOverviewMinimizedMobile, setIsOverviewMinimizedMobile] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('overview_minimized_mobile');
+      if (stored !== null) return stored === 'true';
+      return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleMobileOverview = () => {
+    setIsOverviewMinimizedMobile((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('overview_minimized_mobile', String(next));
+      } catch {
+        // Ignore localStorage error
+      }
+      return next;
+    });
+  };
 
   const currentMonthName = new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase();
   const todayStr = getTodayIsoString();
@@ -146,8 +170,81 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 10 Dashboard Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      {/* Mobile Minimize / Expand Toggle Bar */}
+      <div className="flex md:hidden items-center justify-between px-1 py-0.5">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            System Overview
+          </span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-200/60 dark:border-indigo-800/40">
+            10 Metrics
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={toggleMobileOverview}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition-all active:scale-95 cursor-pointer border border-slate-200/80 dark:border-slate-700/60 shadow-2xs"
+          aria-label={isOverviewMinimizedMobile ? 'Expand system overview' : 'Minimize system overview'}
+        >
+          {isOverviewMinimizedMobile ? (
+            <>
+              <ChevronDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>Expand</span>
+            </>
+          ) : (
+            <>
+              <ChevronUp className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              <span>Minimize</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Compact Minimized Card (Mobile only when minimized) */}
+      {isOverviewMinimizedMobile && (
+        <div
+          onClick={toggleMobileOverview}
+          className="md:hidden card-bg p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:border-indigo-500/40 transition-all active:scale-[0.99] space-y-2.5"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-xs font-bold text-slate-800 dark:text-white">Portfolio Pulse</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">• Minimized</span>
+            </div>
+            <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+              <span>Tap to expand</span>
+              <ChevronDown className="w-3 h-3" />
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+            <div>
+              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">
+                Total Outstanding
+              </div>
+              <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                {formatCurrency(stats.totalOutstanding)}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-[9px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">
+                Collected ({currentMonthName})
+              </div>
+              <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(stats.totalCollected)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10 Dashboard Stat Cards (Full view on desktop, collapsible on phone) */}
+      <div
+        className={`${
+          isOverviewMinimizedMobile ? 'hidden md:grid' : 'grid'
+        } grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5`}
+      >
         {statCards.map((card, idx) => (
           <div
             key={idx}

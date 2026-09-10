@@ -68,7 +68,16 @@ DROP POLICY IF EXISTS "Allow public update access" ON public.portfolio_sync;
 DROP POLICY IF EXISTS "Allow public delete access" ON public.portfolio_sync;
 DROP POLICY IF EXISTS "Allow full public access" ON public.portfolio_sync;
 
-CREATE POLICY "Allow full public access" ON public.portfolio_sync FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);`;
+CREATE POLICY "Allow full public access"
+ON public.portfolio_sync
+FOR ALL
+TO anon, authenticated, service_role
+USING (true)
+WITH CHECK (true);
+
+GRANT ALL ON TABLE public.portfolio_sync TO anon;
+GRANT ALL ON TABLE public.portfolio_sync TO authenticated;
+GRANT ALL ON TABLE public.portfolio_sync TO service_role;`;
 
   return (
     <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in">

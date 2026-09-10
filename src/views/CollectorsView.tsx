@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/formatters';
 import { UserCheck, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { ConfirmDeleteModal } from '../components/modals/ConfirmDeleteModal';
 
 interface CollectorsViewProps {
   onOpenAddCollector: () => void;
@@ -46,14 +47,10 @@ export const CollectorsView: React.FC<CollectorsViewProps> = ({
 
   const grandTotalCashout = collectorCashouts.reduce((sum, co) => sum + co.amount, 0);
 
+  const [collectorToDelete, setCollectorToDelete] = useState<{ id: string; name: string } | null>(null);
+
   const handleDelete = (id: string, name: string) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete collector profile "${name}"? All assignments and records will be unlinked.`
-      )
-    ) {
-      deleteCollector(id);
-    }
+    setCollectorToDelete({ id, name });
   };
 
   const handleOpenLoans = (collectorId: string) => {
@@ -206,6 +203,29 @@ export const CollectorsView: React.FC<CollectorsViewProps> = ({
           </table>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(collectorToDelete)}
+        title="Delete Collector Profile"
+        subtitle="Permanent profile removal"
+        message={
+          <span>
+            Are you sure you want to delete collector profile{' '}
+            <strong className="text-slate-900 dark:text-white font-semibold">
+              "{collectorToDelete?.name}"
+            </strong>
+            ? All loan assignments and collector cashouts will be unlinked from this profile.
+          </span>
+        }
+        confirmLabel="Yes, Delete Collector"
+        onConfirm={() => {
+          if (collectorToDelete) {
+            deleteCollector(collectorToDelete.id);
+            setCollectorToDelete(null);
+          }
+        }}
+        onClose={() => setCollectorToDelete(null)}
+      />
     </div>
   );
 };

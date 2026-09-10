@@ -114,41 +114,81 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Print Specific Rules */
 @media print {
-  body {
+  html, body {
     background-color: #ffffff !important;
     color: #000000 !important;
-  }
-  aside,
-  header,
-  .print-hide,
-  button:not(.print-allow),
-  .no-print {
-    display: none !important;
-  }
-  main {
-    padding: 0 !important;
-    background-color: #ffffff !important;
+    height: auto !important;
     overflow: visible !important;
   }
+  
+  #root,
+  .h-screen,
+  div[class*="h-screen"],
+  main,
+  #app-main {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background-color: #ffffff !important;
+  }
+
+  aside,
+  header,
+  .sidebar-container,
+  .print-hide,
+  .no-print,
+  .print\:hidden,
+  button:not(.print-allow) {
+    display: none !important;
+  }
+
   .card-bg {
     background-color: #ffffff !important;
     border: 1px solid #cbd5e1 !important;
     color: #000000 !important;
     box-shadow: none !important;
+    border-radius: 8px !important;
   }
+
   table, th, td {
-    border-color: #94a3b8 !important;
+    border-color: #cbd5e1 !important;
     color: #000000 !important;
   }
+
+  th {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+  }
+
   .text-white,
-  .text-cyan-400,
-  .text-indigo-400,
-  .text-emerald-400,
-  .text-amber-400,
-  .text-red-400,
+  .text-slate-900,
   .text-gray-300,
   .text-gray-400 {
-    color: #000000 !important;
+    color: #0f172a !important;
+  }
+
+  .text-indigo-600,
+  .text-indigo-400 {
+    color: #4f46e5 !important;
+  }
+
+  .text-emerald-600,
+  .text-emerald-400 {
+    color: #059669 !important;
+  }
+
+  .text-rose-600,
+  .text-rose-400 {
+    color: #e11d48 !important;
+  }
+
+  .text-amber-600,
+  .text-amber-400 {
+    color: #d97706 !important;
   }
 }
 

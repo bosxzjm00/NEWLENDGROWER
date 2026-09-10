@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDateToWords, getTodayIsoString } from '../utils/formatters';
 import { getSupabaseConfig } from '../lib/supabase';
@@ -10,12 +10,14 @@ import {
   Printer,
   AlertTriangle,
   FileCheck,
-  RefreshCw,
   Cloud,
+  RefreshCw,
   CheckCircle2,
-  Copy,
-  Check,
+  XCircle,
   Key,
+  Globe,
+  ArrowUpCircle,
+  ArrowDownCircle,
 } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -39,21 +41,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenResetModal }) 
     saveSupabaseSettings,
   } = useApp();
 
+  const initialConfig = getSupabaseConfig();
+  const [supabaseUrl, setSupabaseUrl] = useState(initialConfig.url || '');
+  const [supabaseAnonKey, setSupabaseAnonKey] = useState(initialConfig.key || '');
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   const [dcsDate, setDcsDate] = useState(getTodayIsoString());
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
-  // Supabase form states
-  const [supabaseUrl, setSupabaseUrl] = useState(() => getSupabaseConfig().url);
-  const [supabaseKey, setSupabaseKey] = useState(() => getSupabaseConfig().key);
-  const [supabaseMsg, setSupabaseMsg] = useState<string | null>(null);
-  const [copiedSql, setCopiedSql] = useState(false);
-  const [showSql, setShowSql] = useState(false);
+  const handleSaveSupabase = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setSaveStatus(null);
+    try {
+      const res = await saveSupabaseSettings(supabaseUrl.trim(), supabaseAnonKey.trim());
+      setSaveStatus(res.message || (res.success ? 'Supabase connected successfully!' : 'Failed to connect.'));
+    } catch {
+      setSaveStatus('Error saving Supabase configuration.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-  useEffect(() => {
-    const cfg = getSupabaseConfig();
-    setSupabaseUrl(cfg.url);
-    setSupabaseKey(cfg.key);
-  }, [activeSettingsSection]);
+  const handleManualPush = async () => {
+    const res = await pushToSupabase();
+    setSaveStatus(res.message);
+  };
+
+  const handleManualPull = async () => {
+    if (window.confirm('Pull latest data from Supabase? This will replace your local records with cloud data.')) {
+      const res = await pullFromSupabase();
+      setSaveStatus(res.message);
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -176,7 +197,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenResetModal }) 
         )}
       </div>
 
-      {/* Supabase Cloud Database Section */}
+      {/* Supabase Cloud Sync Section */}
       <div
         id="settings-card-supabase"
         className="card-bg rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm"
@@ -186,196 +207,133 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenResetModal }) 
           className="p-5 text-slate-900 dark:text-white font-bold text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 flex justify-between items-center select-none transition-colors"
         >
           <div className="flex items-center gap-2.5">
-            <Cloud className="w-4 h-4 text-emerald-500" />
-            <div className="flex items-center gap-2">
-              <span>Supabase Cloud Database</span>
-              {supabaseSyncStatus.connected ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Connected
-                </span>
-              ) : isSupabaseConfigured ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
-                  Configured
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
-                  Ready to Connect
-                </span>
-              )}
-            </div>
+            <Cloud className="w-4 h-4 text-cyan-500" />
+            <span>Supabase Cloud Database & Sync</span>
+            {isSupabaseConfigured && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 font-semibold">
+                Configured
+              </span>
+            )}
           </div>
-          <span className="text-indigo-600 dark:text-indigo-400 text-xs font-mono">
+          <span className="text-cyan-600 dark:text-cyan-400 text-xs font-mono">
             {activeSettingsSection === 'supabase' ? '▼' : '►'}
           </span>
         </div>
 
         {activeSettingsSection === 'supabase' && (
-          <div className="p-6 pt-0 space-y-4 border-t border-slate-200 dark:border-slate-800 animate-in fade-in">
+          <div className="p-6 pt-0 space-y-5 border-t border-slate-200 dark:border-slate-800 animate-in fade-in">
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 leading-relaxed">
-              Connect your lending portfolio directly to your Supabase PostgreSQL cloud backend.
-              All active loans, schedules, payments, capital funds, and collector ledger records sync safely.
+              Connect your portfolio to a free Supabase Postgres database. This enables real-time synchronization between your 
+              <strong> PC and mobile devices</strong> so changes appear on all screens automatically.
             </p>
 
-            {supabaseMsg && (
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                <FileCheck className="w-4 h-4" />
-                <span>{supabaseMsg}</span>
+            {/* Connection Status Badge */}
+            <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                {supabaseSyncStatus.connected ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                )}
+                <div>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {supabaseSyncStatus.connected ? 'Cloud Connected' : 'Not Connected'}
+                  </span>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {supabaseSyncStatus.message}
+                    {supabaseSyncStatus.lastSynced && ` • Last synced at ${supabaseSyncStatus.lastSynced}`}
+                  </p>
+                </div>
+              </div>
+              {supabaseSyncStatus.syncing && (
+                <RefreshCw className="w-4 h-4 text-cyan-500 animate-spin" />
+              )}
+            </div>
+
+            {saveStatus && (
+              <div className="p-3 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl text-xs text-cyan-700 dark:text-cyan-300 flex items-center gap-2">
+                <FileCheck className="w-4 h-4 shrink-0" />
+                <span>{saveStatus}</span>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            {/* Credentials Form */}
+            <form onSubmit={handleSaveSupabase} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Supabase Project URL
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Supabase Project URL</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="https://xyzcompany.supabase.co"
+                  placeholder="https://your-project-id.supabase.co"
                   value={supabaseUrl}
                   onChange={(e) => setSupabaseUrl(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-cyan-500 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Supabase Anon Public API Key
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Supabase Anon / Public API Key</span>
                 </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    value={supabaseKey}
-                    onChange={(e) => setSupabaseKey(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-mono"
-                  />
-                  <Key className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
-                </div>
+                <input
+                  type="password"
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  value={supabaseAnonKey}
+                  onChange={(e) => setSupabaseAnonKey(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-cyan-500 font-mono"
+                />
               </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <button
-                onClick={async () => {
-                  setSupabaseMsg('Verifying and saving connection...');
-                  const res = await saveSupabaseSettings(supabaseUrl, supabaseKey);
-                  setSupabaseMsg(res.message);
-                  setTimeout(() => setSupabaseMsg(null), 5000);
-                }}
-                disabled={supabaseSyncStatus.syncing}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm shadow-indigo-600/20 flex items-center gap-2 cursor-pointer active:scale-[0.98]"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${supabaseSyncStatus.syncing ? 'animate-spin' : ''}`} />
-                <span>Save & Connect</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm shadow-cyan-600/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Testing & Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Save & Test Connection</span>
+                    </>
+                  )}
+                </button>
 
-              <button
-                onClick={async () => {
-                  setSupabaseMsg('Syncing local portfolio to Supabase...');
-                  const res = await pushToSupabase();
-                  setSupabaseMsg(res.message);
-                  setTimeout(() => setSupabaseMsg(null), 5000);
-                }}
-                disabled={supabaseSyncStatus.syncing || !isSupabaseConfigured}
-                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors border border-slate-200 dark:border-slate-700 flex items-center gap-2 cursor-pointer"
-              >
-                <Upload className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                <span>Push Local to Supabase</span>
-              </button>
+                {isSupabaseConfigured && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleManualPush}
+                      className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs px-3.5 py-2.5 rounded-xl transition-colors border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer"
+                      title="Upload all current local data to Supabase"
+                    >
+                      <ArrowUpCircle className="w-3.5 h-3.5 text-cyan-500" />
+                      <span>Push Local to Cloud</span>
+                    </button>
 
-              <button
-                onClick={async () => {
-                  setSupabaseMsg('Pulling remote records from Supabase...');
-                  const res = await pullFromSupabase();
-                  setSupabaseMsg(res.message);
-                  setTimeout(() => setSupabaseMsg(null), 5000);
-                }}
-                disabled={supabaseSyncStatus.syncing || !isSupabaseConfigured}
-                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors border border-slate-200 dark:border-slate-700 flex items-center gap-2 cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Pull from Supabase</span>
-              </button>
-
-              <button
-                onClick={() => setShowSql(!showSql)}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline px-2 py-2 cursor-pointer ml-auto"
-              >
-                {showSql ? 'Hide SQL Script ▲' : 'View Supabase SQL Script ▼'}
-              </button>
-            </div>
-
-            {showSql && (
-              <div className="mt-3 p-4 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 text-xs font-mono relative">
-                <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
-                  <span className="text-slate-400 text-[11px]">Run in Supabase SQL Editor:</span>
-                  <button
-                    onClick={() => {
-                      const sql = `CREATE TABLE IF NOT EXISTS public.portfolio_sync (
-    id TEXT PRIMARY KEY,
-    borrowers JSONB NOT NULL DEFAULT '[]'::jsonb,
-    capital_sources JSONB NOT NULL DEFAULT '[]'::jsonb,
-    collectors JSONB NOT NULL DEFAULT '[]'::jsonb,
-    assignments JSONB NOT NULL DEFAULT '[]'::jsonb,
-    collector_cashouts JSONB NOT NULL DEFAULT '[]'::jsonb,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-ALTER TABLE public.portfolio_sync ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow public read access" ON public.portfolio_sync;
-DROP POLICY IF EXISTS "Allow public insert access" ON public.portfolio_sync;
-DROP POLICY IF EXISTS "Allow public update access" ON public.portfolio_sync;
-DROP POLICY IF EXISTS "Allow public delete access" ON public.portfolio_sync;
-DROP POLICY IF EXISTS "Allow full public access" ON public.portfolio_sync;
-
-CREATE POLICY "Allow full public access" ON public.portfolio_sync FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);`;
-                      navigator.clipboard.writeText(sql);
-                      setCopiedSql(true);
-                      setTimeout(() => setCopiedSql(false), 3000);
-                    }}
-                    className="flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 cursor-pointer"
-                  >
-                    {copiedSql ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedSql ? 'Copied SQL!' : 'Copy SQL'}</span>
-                  </button>
-                </div>
-                <pre className="overflow-x-auto text-[11px] text-slate-300 leading-relaxed">
-{`CREATE TABLE IF NOT EXISTS public.portfolio_sync (
-    id TEXT PRIMARY KEY,
-    borrowers JSONB NOT NULL DEFAULT '[]'::jsonb,
-    capital_sources JSONB NOT NULL DEFAULT '[]'::jsonb,
-    collectors JSONB NOT NULL DEFAULT '[]'::jsonb,
-    assignments JSONB NOT NULL DEFAULT '[]'::jsonb,
-    collector_cashouts JSONB NOT NULL DEFAULT '[]'::jsonb,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-ALTER TABLE public.portfolio_sync ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow public read access" ON public.portfolio_sync;
-DROP POLICY IF EXISTS "Allow public insert access" ON public.portfolio_sync;
-DROP POLICY IF EXISTS "Allow public update access" ON public.portfolio_sync;
-DROP POLICY IF EXISTS "Allow public delete access" ON public.portfolio_sync;
-DROP POLICY IF EXISTS "Allow full public access" ON public.portfolio_sync;
-
-CREATE POLICY "Allow full public access" ON public.portfolio_sync FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);`}
-                </pre>
+                    <button
+                      type="button"
+                      onClick={handleManualPull}
+                      className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs px-3.5 py-2.5 rounded-xl transition-colors border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer"
+                      title="Download latest data from Supabase to this device"
+                    >
+                      <ArrowDownCircle className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Pull Cloud to This Device</span>
+                    </button>
+                  </>
+                )}
               </div>
-            )}
-
-            {supabaseSyncStatus.message && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
-                Status: {supabaseSyncStatus.message}
-                {supabaseSyncStatus.lastSynced && ` • Last synced at ${supabaseSyncStatus.lastSynced}`}
-              </p>
-            )}
+            </form>
           </div>
         )}
       </div>
-
-      {/* Daily Collection Sheet Section */}
       <div
         id="settings-card-dcs"
         className="card-bg rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm"

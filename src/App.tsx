@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppProvider, useApp } from './context/AppContext';
+import { AppProvider, useApp, getPortalBorrowerIdFromUrl } from './context/AppContext';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LoginView } from './components/LoginView';
@@ -14,10 +14,13 @@ import { CashoutsView } from './views/CashoutsView';
 import { CollectorLoansView } from './views/CollectorLoansView';
 import { LedgerView } from './views/LedgerView';
 import { PastLedgerView } from './views/PastLedgerView';
+import { ActivityLogView } from './views/ActivityLogView';
 import { StatementView } from './views/StatementView';
 import { AgreementView } from './views/AgreementView';
 import { CollectionSheetView } from './views/CollectionSheetView';
+import { AccountsView } from './views/AccountsView';
 import { SettingsView } from './views/SettingsView';
+import { BorrowerPortalView } from './views/BorrowerPortalView';
 
 // Modals
 import { AddBorrowerModal } from './components/modals/AddBorrowerModal';
@@ -28,9 +31,18 @@ import { CollectorCashoutModal } from './components/modals/CollectorCashoutModal
 import { AssignLoanModal } from './components/modals/AssignLoanModal';
 import { PaymentModal } from './components/modals/PaymentModal';
 import { ResetDataModal } from './components/modals/ResetDataModal';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 const MainLayout: React.FC = () => {
-  const { isLoggedIn, currentView, selectedCapitalId } = useApp();
+  const {
+    isLoggedIn,
+    currentView,
+    setCurrentView,
+    selectedCapitalId,
+    selectedPortalBorrowerId,
+    setSelectedPortalBorrowerId,
+    isMasterAdmin,
+  } = useApp();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -50,7 +62,27 @@ const MainLayout: React.FC = () => {
   const [paymentScheduleId, setPaymentScheduleId] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
+  // If borrower accesses via personal link, completely lock the page strictly to the borrower portfolio
+  const urlPortalId = getPortalBorrowerIdFromUrl();
+  if (urlPortalId) {
+    return (
+      <BorrowerPortalView
+        isPublicAccess={true}
+        borrowerId={urlPortalId}
+      />
+    );
+  }
+
+  // If borrower accesses via personal link, bypass admin login to view read-only schedule
   if (!isLoggedIn) {
+    if (currentView === 'borrower-portal' || Boolean(selectedPortalBorrowerId)) {
+      return (
+        <BorrowerPortalView
+          isPublicAccess={true}
+          borrowerId={selectedPortalBorrowerId || undefined}
+        />
+      );
+    }
     return <LoginView />;
   }
 
@@ -64,9 +96,9 @@ const MainLayout: React.FC = () => {
     setIsCollectorCashoutOpen(true);
   };
 
-  const handleOpenPayment = (borrowerId: string, scheduleId: string) => {
+  const handleOpenPayment = (borrowerId: string, scheduleId?: string) => {
     setPaymentBorrowerId(borrowerId);
-    setPaymentScheduleId(scheduleId);
+    setPaymentScheduleId(scheduleId || null);
     setIsPaymentOpen(true);
   };
 
@@ -80,7 +112,12 @@ const MainLayout: React.FC = () => {
           />
         );
       case 'borrowers':
-        return <BorrowersView onOpenAddBorrower={() => setIsAddBorrowerOpen(true)} />;
+        return (
+          <BorrowersView
+            onOpenAddBorrower={() => setIsAddBorrowerOpen(true)}
+            onOpenPaymentModal={handleOpenPayment}
+          />
+        );
       case 'capital':
         return <CapitalView onOpenAddCapital={() => setIsAddCapitalOpen(true)} />;
       case 'capital-detail':
@@ -102,14 +139,38 @@ const MainLayout: React.FC = () => {
         return <LedgerView onOpenPaymentModal={handleOpenPayment} />;
       case 'past-ledger':
         return <PastLedgerView />;
+      case 'activity-log':
+        return <ActivityLogView />;
       case 'statement':
         return <StatementView />;
       case 'agreement':
         return <AgreementView />;
       case 'collection-sheet':
         return <CollectionSheetView />;
+      case 'accounts':
+        return isMasterAdmin ? (
+          <AccountsView />
+        ) : (
+          <DashboardView
+            onOpenAddBorrower={() => setIsAddBorrowerOpen(true)}
+            onOpenAddCapital={() => setIsAddCapitalOpen(true)}
+          />
+        );
       case 'settings':
         return <SettingsView onOpenResetModal={() => setIsResetModalOpen(true)} />;
+      case 'borrower-portal':
+        return (
+          <BorrowerPortalView
+            borrowerId={selectedPortalBorrowerId || undefined}
+            onBackToDashboard={() => {
+              setSelectedPortalBorrowerId(null);
+              setCurrentView('borrowers');
+              if (typeof window !== 'undefined') {
+                window.history.replaceState(null, '', window.location.pathname);
+              }
+            }}
+          />
+        );
       default:
         return (
           <DashboardView
@@ -123,13 +184,13 @@ const MainLayout: React.FC = () => {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-800 dark:bg-[#0b1120] dark:text-slate-400">
       {/* Desktop Sidebar */}
-      <div className="hidden md:block shrink-0">
+      <div className="hidden md:block shrink-0 sidebar-container no-print print-hide">
         <Sidebar />
       </div>
 
       {/* Mobile Drawer Sidebar */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
+        <div className="fixed inset-0 z-50 md:hidden flex no-print print-hide">
           <div
             className="fixed inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
@@ -142,10 +203,12 @@ const MainLayout: React.FC = () => {
 
       {/* Main Viewport */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <Header
-          isMobileMenuOpen={isMobileMenuOpen}
-          onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
-        />
+        <div className="no-print print-hide">
+          <Header
+            isMobileMenuOpen={isMobileMenuOpen}
+            onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
+          />
+        </div>
 
         <main id="app-main" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
           <div className="max-w-7xl mx-auto">{renderCurrentView()}</div>
@@ -197,6 +260,9 @@ const MainLayout: React.FC = () => {
         isOpen={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
       />
+
+      {/* Offline Status Toast */}
+      <OfflineIndicator />
     </div>
   );
 };

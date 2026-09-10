@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDateToWords } from '../utils/formatters';
 import { Coins, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { ConfirmDeleteModal } from '../components/modals/ConfirmDeleteModal';
 
 interface CapitalViewProps {
   onOpenAddCapital: () => void;
@@ -22,10 +23,10 @@ export const CapitalView: React.FC<CapitalViewProps> = ({ onOpenAddCapital }) =>
     return c.name.toLowerCase().includes(globalSearch.toLowerCase());
   });
 
+  const [capitalToDelete, setCapitalToDelete] = useState<{ id: string; name: string } | null>(null);
+
   const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete capital source "${name}"?`)) {
-      deleteCapitalSource(id);
-    }
+    setCapitalToDelete({ id, name });
   };
 
   const handleOpenDetail = (id: string) => {
@@ -142,6 +143,29 @@ export const CapitalView: React.FC<CapitalViewProps> = ({ onOpenAddCapital }) =>
           </table>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(capitalToDelete)}
+        title="Delete Capital Source"
+        subtitle="Permanent capital source removal"
+        message={
+          <span>
+            Are you sure you want to delete capital source{' '}
+            <strong className="text-slate-900 dark:text-white font-semibold">
+              "{capitalToDelete?.name}"
+            </strong>
+            ? This will remove its contribution from total capital pool computations.
+          </span>
+        }
+        confirmLabel="Yes, Delete Capital"
+        onConfirm={() => {
+          if (capitalToDelete) {
+            deleteCapitalSource(capitalToDelete.id);
+            setCapitalToDelete(null);
+          }
+        }}
+        onClose={() => setCapitalToDelete(null)}
+      />
     </div>
   );
 };

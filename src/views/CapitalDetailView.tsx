@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDateToWords } from '../utils/formatters';
 import { Plus, ArrowLeft, Trash2, Coins } from 'lucide-react';
+import { ConfirmDeleteModal } from '../components/modals/ConfirmDeleteModal';
 
 interface CapitalDetailViewProps {
   onOpenAddInvestment: () => void;
@@ -37,10 +38,10 @@ export const CapitalDetailView: React.FC<CapitalDetailViewProps> = ({ onOpenAddI
     return tx.notes.toLowerCase().includes(globalSearch.toLowerCase());
   });
 
+  const [txToDelete, setTxToDelete] = useState<string | null>(null);
+
   const handleDeleteTx = (txId: string) => {
-    if (window.confirm('Are you sure you want to delete this investment entry?')) {
-      deleteCapitalTransaction(currentCap.id, txId);
-    }
+    setTxToDelete(txId);
   };
 
   return (
@@ -121,6 +122,21 @@ export const CapitalDetailView: React.FC<CapitalDetailViewProps> = ({ onOpenAddI
           </table>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(txToDelete)}
+        title="Delete Investment Entry"
+        subtitle="Capital transaction removal"
+        message="Are you sure you want to delete this capital investment entry? The total source amount will be recalculated."
+        confirmLabel="Yes, Delete Entry"
+        onConfirm={() => {
+          if (txToDelete && currentCap) {
+            deleteCapitalTransaction(currentCap.id, txToDelete);
+            setTxToDelete(null);
+          }
+        }}
+        onClose={() => setTxToDelete(null)}
+      />
     </div>
   );
 };

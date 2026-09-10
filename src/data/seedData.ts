@@ -1,4 +1,4 @@
-import { Borrower, CapitalSource, Collector, LoanAssignment, CollectorCashout } from '../types';
+import { Borrower, CapitalSource, Collector, LoanAssignment, CollectorCashout, ActivityLog } from '../types';
 
 export const INITIAL_CAPITAL: CapitalSource[] = [
   {
@@ -55,6 +55,7 @@ export const INITIAL_COLLECTORS: Collector[] = [
 export const INITIAL_BORROWERS: Borrower[] = [
   {
     id: 'b_1',
+    loan_id: '482910',
     name: 'Lizel Dizon',
     contact: '0919-456-7890',
     address: 'Blk 12 Lot 4, Villa Verde, Caloocan',
@@ -118,6 +119,7 @@ export const INITIAL_BORROWERS: Borrower[] = [
   },
   {
     id: 'b_2',
+    loan_id: '739104',
     name: 'Juan Dela Cruz',
     contact: '0922-334-5566',
     address: '77 Rizal Ave, Santa Cruz, Manila',
@@ -153,6 +155,7 @@ export const INITIAL_BORROWERS: Borrower[] = [
   },
   {
     id: 'b_3',
+    loan_id: '519283',
     name: 'Maria Clara Santos',
     contact: '0918-776-9012',
     address: '14 Mabini St, Ermita, Manila',
@@ -209,3 +212,63 @@ export const INITIAL_CASHOUTS: CollectorCashout[] = [
     notes: 'August collection commission disbursement',
   },
 ];
+
+export const INITIAL_ACTIVITIES: ActivityLog[] = [
+  {
+    id: 'act_seed_1',
+    type: 'payment',
+    title: 'Payment: Lizel Dizon',
+    description: 'Paid ₱2,000.00 via Cash for Installment #2',
+    amount: 2000,
+    date: '2026-09-02T14:30:00',
+    borrowerName: 'Lizel Dizon',
+  },
+  {
+    id: 'act_seed_2',
+    type: 'payment',
+    title: 'Payment: Lizel Dizon',
+    description: 'Paid ₱4,000.00 via GCash (Ref: GC89230198) for Installment #1',
+    amount: 4000,
+    date: '2026-08-30T10:15:00',
+    borrowerName: 'Lizel Dizon',
+    reference: 'GC89230198',
+  },
+  {
+    id: 'act_seed_3',
+    type: 'add_borrower',
+    title: 'Added Borrower: Juan Dela Cruz',
+    description: 'Loan amount ₱15,000.00 • monthly (2 installments)',
+    amount: 15000,
+    date: '2026-08-15T09:00:00',
+    borrowerName: 'Juan Dela Cruz',
+  },
+  {
+    id: 'act_seed_4',
+    type: 'add_borrower',
+    title: 'Added Borrower: Lizel Dizon',
+    description: 'Loan amount ₱10,000.00 • monthly (3 installments)',
+    amount: 10000,
+    date: '2026-08-01T08:30:00',
+    borrowerName: 'Lizel Dizon',
+  },
+  {
+    id: 'act_seed_5',
+    type: 'payment',
+    title: 'Payment: Maria Clara Santos',
+    description: 'Paid ₱6,000.00 in full via Bank Transfer (Ref: BPI-TR-990182)',
+    amount: 6000,
+    date: '2026-07-28T16:05:00',
+    borrowerName: 'Maria Clara Santos',
+    reference: 'BPI-TR-990182',
+  },
+  {
+    id: 'act_seed_6',
+    type: 'add_borrower',
+    title: 'Added Borrower: Maria Clara Santos',
+    description: 'Loan amount ₱5,000.00 • monthly (1 installment)',
+    amount: 5000,
+    date: '2026-07-01T11:00:00',
+    borrowerName: 'Maria Clara Santos',
+  },
+];
+

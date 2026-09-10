@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDateToWords } from '../utils/formatters';
 import { TrendingDown, Plus, Trash2 } from 'lucide-react';
+import { ConfirmDeleteModal } from '../components/modals/ConfirmDeleteModal';
 
 interface CashoutsViewProps {
   onOpenCashout: () => void;
@@ -23,10 +24,10 @@ export const CashoutsView: React.FC<CashoutsViewProps> = ({ onOpenCashout }) => 
     return colName.toLowerCase().includes(q) || (co.notes && co.notes.toLowerCase().includes(q));
   });
 
+  const [cashoutToDelete, setCashoutToDelete] = useState<string | null>(null);
+
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this cash out transaction?')) {
-      deleteCollectorCashout(id);
-    }
+    setCashoutToDelete(id);
   };
 
   const totalCashedOut = collectorCashouts.reduce((sum, co) => sum + co.amount, 0);
@@ -115,6 +116,21 @@ export const CashoutsView: React.FC<CashoutsViewProps> = ({ onOpenCashout }) => 
           </table>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(cashoutToDelete)}
+        title="Delete Cash Out Entry"
+        subtitle="Commission withdrawal removal"
+        message="Are you sure you want to delete this cash out transaction? The collector's available commission balance will be recalculated."
+        confirmLabel="Yes, Delete Cash Out"
+        onConfirm={() => {
+          if (cashoutToDelete) {
+            deleteCollectorCashout(cashoutToDelete);
+            setCashoutToDelete(null);
+          }
+        }}
+        onClose={() => setCashoutToDelete(null)}
+      />
     </div>
   );
 };

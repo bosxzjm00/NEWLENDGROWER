@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/formatters';
 import { ArrowLeft, Trash2, Users, Plus } from 'lucide-react';
+import { ConfirmDeleteModal } from '../components/modals/ConfirmDeleteModal';
 
 interface CollectorLoansViewProps {
   onOpenAssignLoan: (collectorId: string) => void;
@@ -54,14 +55,10 @@ export const CollectorLoansView: React.FC<CollectorLoansViewProps> = ({ onOpenAs
 
   const stats = getCollectorStats(collector.id);
 
+  const [unassignTarget, setUnassignTarget] = useState<{ asgId: string; borrowerName: string } | null>(null);
+
   const handleUnassign = (asgId: string, borrowerName: string) => {
-    if (
-      window.confirm(
-        `Are you sure you want to unassign "${borrowerName}" from collector ${collector.name}?`
-      )
-    ) {
-      unassignLoan(asgId);
-    }
+    setUnassignTarget({ asgId, borrowerName });
   };
 
   return (
@@ -149,27 +146,27 @@ export const CollectorLoansView: React.FC<CollectorLoansViewProps> = ({ onOpenAs
 
         <div className="card-bg p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 font-semibold tracking-wider mb-2">
-            <span>TOTAL UNPAID COMMISSION</span>
+            <span>TOTAL AMOUNT COLLECTED</span>
             <span className="text-amber-500 font-bold">↗</span>
           </div>
-          <div className="text-amber-600 dark:text-amber-400 font-bold text-base mb-1" id="collector-stat-unpaid-commission">
-            {formatCurrency(stats.availableCommission)}
+          <div className="text-amber-600 dark:text-amber-400 font-bold text-base mb-1" id="collector-stat-total-collected">
+            {formatCurrency(stats.totalAmountCollected)}
           </div>
-          <div className="text-[10px] text-slate-400 dark:text-slate-500">Total commission minus cash out</div>
+          <div className="text-[10px] text-slate-400 dark:text-slate-500">Total payment of all assigned borrowers</div>
         </div>
       </div>
 
       <div className="card-bg rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+          <table className="w-full table-auto text-left text-[11px] sm:text-xs text-slate-700 dark:text-slate-300">
             <thead className="bg-slate-50 dark:bg-slate-900/90 uppercase text-[10px] text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="px-6 py-3.5 whitespace-nowrap">Borrower Name</th>
-                <th className="px-6 py-3.5 whitespace-nowrap">Contact No.</th>
-                <th className="px-6 py-3.5 whitespace-nowrap">Loan Amount</th>
-                <th className="px-6 py-3.5 whitespace-nowrap">Total Payable</th>
-                <th className="px-6 py-3.5 whitespace-nowrap">Status</th>
-                <th className="px-6 py-3.5 text-right whitespace-nowrap">Actions</th>
+                <th className="px-3 sm:px-4 lg:px-6 py-3.5 whitespace-nowrap">Borrower Name</th>
+                <th className="px-3 sm:px-4 lg:px-6 py-3.5 whitespace-nowrap">Contact No.</th>
+                <th className="px-3 sm:px-4 lg:px-6 py-3.5 whitespace-nowrap">Loan Amount</th>
+                <th className="px-3 sm:px-4 lg:px-6 py-3.5 whitespace-nowrap">Total Payable</th>
+                <th className="px-3 sm:px-4 lg:px-6 py-3.5 whitespace-nowrap">Status</th>
+                <th className="px-3 sm:px-4 lg:px-6 py-3.5 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody id="collector-loans-table-body" className="divide-y divide-slate-200/80 dark:divide-slate-800">
@@ -179,17 +176,17 @@ export const CollectorLoansView: React.FC<CollectorLoansViewProps> = ({ onOpenAs
 
                 return (
                   <tr key={asgId} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                    <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-3.5 font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                       {borrower.name}
                     </td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">{borrower.contact}</td>
-                    <td className="px-6 py-4 text-indigo-600 dark:text-indigo-400 font-semibold whitespace-nowrap">
+                    <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-3.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">{borrower.contact}</td>
+                    <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-3.5 text-indigo-600 dark:text-indigo-400 font-semibold whitespace-nowrap tabular-nums">
                       {formatCurrency(borrower.amount)}
                     </td>
-                    <td className="px-6 py-4 text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap">
+                    <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-3.5 text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap tabular-nums">
                       {formatCurrency(borrower.total_payable)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-3.5 whitespace-nowrap">
                       {borrower.is_fully_paid ? (
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
                           Fully Paid ✓
@@ -200,7 +197,7 @@ export const CollectorLoansView: React.FC<CollectorLoansViewProps> = ({ onOpenAs
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right whitespace-nowrap">
+                    <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-3.5 text-right whitespace-nowrap">
                       <button
                         onClick={() => handleUnassign(asgId, borrower.name)}
                         className="bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-medium px-2.5 py-1 rounded-lg transition-colors border border-rose-200 dark:border-rose-500/20 text-xs cursor-pointer"
@@ -224,6 +221,29 @@ export const CollectorLoansView: React.FC<CollectorLoansViewProps> = ({ onOpenAs
           </table>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(unassignTarget)}
+        title="Unassign Borrower Loan"
+        subtitle="Collector loan reassignment"
+        message={
+          <span>
+            Are you sure you want to unassign borrower{' '}
+            <strong className="text-slate-900 dark:text-white font-semibold">
+              "{unassignTarget?.borrowerName}"
+            </strong>{' '}
+            from collector <strong className="text-slate-900 dark:text-white font-semibold">{collector.name}</strong>?
+          </span>
+        }
+        confirmLabel="Yes, Unassign Loan"
+        onConfirm={() => {
+          if (unassignTarget) {
+            unassignLoan(unassignTarget.asgId);
+            setUnassignTarget(null);
+          }
+        }}
+        onClose={() => setUnassignTarget(null)}
+      />
     </div>
   );
 };

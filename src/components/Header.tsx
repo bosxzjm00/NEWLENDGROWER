@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { formatDateToWords, getTodayIsoString } from '../utils/formatters';
 import { Search, Menu, X, Cloud, RefreshCw, Database } from 'lucide-react';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   onToggleMobileMenu: () => void;
@@ -19,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, isMobileMenu
     setActiveSettingsSection,
   } = useApp();
 
-  const searchViews = ['borrowers', 'capital', 'collectors', 'cashouts', 'ledger', 'past-ledger'];
+  const searchViews = ['borrowers', 'capital', 'collectors', 'cashouts', 'ledger', 'past-ledger', 'activity-log'];
   const showSearch = searchViews.includes(currentView);
 
   const getSearchPlaceholder = () => {
@@ -35,6 +36,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, isMobileMenu
       case 'ledger':
       case 'past-ledger':
         return 'Search ledger accounts by borrower name...';
+      case 'activity-log':
+        return 'Search activities by title, borrower, notes...';
       default:
         return 'Search records...';
     }
@@ -68,41 +71,47 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, isMobileMenu
           </div>
 
           {/* Right Status Pill for Mobile */}
-          <button
-            onClick={() => {
-              setCurrentView('settings');
-              setActiveSettingsSection('supabase');
-            }}
-            className={`md:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
-              supabaseSyncStatus.connected
-                ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                : supabaseSyncStatus.syncing
-                ? 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400'
-                : 'bg-slate-200/60 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-            }`}
-          >
-            {supabaseSyncStatus.syncing ? (
-              <>
-                <RefreshCw className="w-3 h-3 animate-spin text-indigo-500" />
-                <span>Syncing</span>
-              </>
-            ) : supabaseSyncStatus.connected ? (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <Cloud className="w-3 h-3" />
-                <span>Supabase</span>
-              </>
-            ) : (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                <span>Local DB</span>
-              </>
-            )}
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <PWAInstallButton />
+            <button
+              onClick={() => {
+                setCurrentView('settings');
+                setActiveSettingsSection('backup');
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
+                supabaseSyncStatus.connected
+                  ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                  : supabaseSyncStatus.syncing
+                  ? 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400'
+                  : 'bg-slate-200/60 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              {supabaseSyncStatus.syncing ? (
+                <>
+                  <RefreshCw className="w-3 h-3 animate-spin text-indigo-500" />
+                  <span>Syncing</span>
+                </>
+              ) : supabaseSyncStatus.connected ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <Cloud className="w-3 h-3" />
+                  <span>Supabase</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                  <span>Local DB</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Global Search & Connection Status */}
-        <div className="flex items-center gap-4 flex-1 md:justify-end">
+        <div className="flex items-center gap-3 flex-1 md:justify-end">
+          <div className="hidden md:block">
+            <PWAInstallButton />
+          </div>
           {showSearch && (
             <div className="relative flex-1 max-w-md">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -128,9 +137,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, isMobileMenu
           <button
             onClick={() => {
               setCurrentView('settings');
-              setActiveSettingsSection('supabase');
+              setActiveSettingsSection('backup');
             }}
-            title={supabaseSyncStatus.message || (supabaseSyncStatus.connected ? 'Supabase Connected' : 'Click to view Supabase Settings')}
+            title={supabaseSyncStatus.message || (supabaseSyncStatus.connected ? 'Auto-saved to Supabase Cloud' : 'Data auto-saving enabled')}
             className={`hidden md:flex items-center gap-2 text-xs px-3.5 py-1.5 rounded-full border transition-all cursor-pointer active:scale-[0.98] ${
               supabaseSyncStatus.connected
                 ? 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300'
@@ -144,13 +153,13 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, isMobileMenu
             {supabaseSyncStatus.syncing ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
-                <span className="font-semibold text-[11px]">Syncing with Supabase...</span>
+                <span className="font-semibold text-[11px]">Auto-saving to Supabase...</span>
               </>
             ) : supabaseSyncStatus.connected ? (
               <>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <Cloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="font-semibold text-[11px]">Supabase Connected</span>
+                <span className="font-semibold text-[11px]">Auto-saved to Cloud</span>
               </>
             ) : isSupabaseConfigured ? (
               <>

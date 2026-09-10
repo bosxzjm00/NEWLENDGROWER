@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDateToWords, getTodayIsoString } from '../utils/formatters';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, ExternalLink } from 'lucide-react';
 
 export const AgreementView: React.FC = () => {
   const {
@@ -9,6 +9,8 @@ export const AgreementView: React.FC = () => {
     selectedAgreementBorrowerId,
     setCurrentView,
   } = useApp();
+
+  const [fallbackPrintUrl, setFallbackPrintUrl] = useState<string | null>(null);
 
   const borrower = borrowers.find((b) => b.id === selectedAgreementBorrowerId);
 
@@ -26,10 +28,271 @@ export const AgreementView: React.FC = () => {
     );
   }
 
+  const generatePrintableAgreementHtml = () => {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loan Agreement - ${borrower.name}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 15mm 20mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #334155;
+      background-color: #ffffff;
+      padding: 24px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .print-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 10px 14px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+    }
+    .btn {
+      padding: 7px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #1e293b;
+    }
+    .btn-primary {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+    }
+    .agreement-card {
+      max-width: 800px;
+      margin: 0 auto;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 40px;
+      background: #ffffff;
+    }
+    .contract-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: #eef2ff;
+      color: #4f46e5;
+      border: 1px solid #c7d2fe;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .sub {
+      font-size: 11px;
+      color: #4f46e5;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .clause {
+      margin-top: 18px;
+    }
+    .clause-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      text-transform: uppercase;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+    .quote-box {
+      padding-left: 14px;
+      border-left: 3px solid #6366f1;
+      margin: 8px 0;
+    }
+    .quote-box-alt {
+      padding-left: 14px;
+      border-left: 3px solid #10b981;
+      margin: 8px 0;
+    }
+    .signatures-row {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 40px;
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      text-align: center;
+    }
+    .sig-line {
+      border-bottom: 1px solid #94a3b8;
+      padding-bottom: 40px;
+      margin-bottom: 8px;
+    }
+    .sig-name {
+      font-weight: 700;
+      font-size: 12px;
+      color: #0f172a;
+    }
+    .sig-label {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    @media print {
+      .print-bar { display: none !important; }
+      body { padding: 0 !important; }
+      .agreement-card {
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <button onclick="window.print()" class="btn btn-primary">🖨️ Print Agreement</button>
+    <button onclick="window.close()" class="btn">✕ Close</button>
+  </div>
+
+  <div class="agreement-card">
+    <div class="header">
+      <div class="contract-badge">Contract Document</div>
+      <div class="title">PROMISSORY NOTE & LOAN AGREEMENT</div>
+      <div class="sub">LendGrower Portfolio Lending System</div>
+    </div>
+
+    <div style="margin-bottom: 16px;">
+      <p>
+        This Loan Agreement (the <strong>"Agreement"</strong>) is entered into and made effective as of
+        <strong>${formatDateToWords(borrower.start_date)}</strong>, by and between:
+      </p>
+
+      <div class="quote-box">
+        <strong>LENDGROWER PORTFOLIO</strong>, represented by the authorized Portfolio Administrator
+        (hereinafter referred to as the <strong>"LENDER"</strong>),
+      </div>
+
+      <p style="text-align: center; font-weight: 700; color: #4f46e5; margin: 10px 0; letter-spacing: 0.1em; font-size: 11px;">
+        AND
+      </p>
+
+      <div class="quote-box-alt">
+        <strong>${borrower.name}</strong>, of legal age, residing at <strong>${borrower.address}</strong>,
+        with contact number <strong>${borrower.contact}</strong> (hereinafter referred to as the <strong>"BORROWER"</strong>).
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="clause-title">1. Loan Terms & Principal</div>
+      <p>
+        For valuable consideration received, the Borrower unconditionally promises to pay to the order of the
+        Lender the principal sum of <strong style="color: #4f46e5;">${formatCurrency(borrower.amount)}</strong>,
+        together with agreed fixed interest of <strong style="color: #d97706;">${borrower.interest_rate}% flat</strong>,
+        resulting in an aggregate total repayable obligation of
+        <strong style="color: #059669;">${formatCurrency(borrower.total_payable)}</strong>.
+      </p>
+    </div>
+
+    <div class="clause">
+      <div class="clause-title">2. Payment Schedule & Frequency</div>
+      <p>
+        The total repayable amount shall be satisfied in <strong>${borrower.installments} installment(s)</strong> on
+        a <strong style="text-transform: uppercase;">${borrower.frequency}</strong> basis, with each installment amortized
+        and due strictly in accordance with the official ledger schedule attached to the borrower account.
+      </p>
+    </div>
+
+    <div class="clause">
+      <div class="clause-title">3. Default, Acceleration & Remedies</div>
+      <p>
+        In the event of any default or failure in punctual payment when due, the entire remaining unpaid balance
+        shall, at the option of the Lender, become immediately due and demandable without further formal notice.
+        The Borrower undertakes to indemnify all collection expenses and reasonable legal costs incurred.
+      </p>
+    </div>
+
+    <div class="signatures-row">
+      <div>
+        <div class="sig-line"></div>
+        <div class="sig-name">${borrower.name}</div>
+        <div class="sig-label">Borrower Signature Over Printed Name</div>
+      </div>
+      <div>
+        <div class="sig-line"></div>
+        <div class="sig-name">LendGrower Admin</div>
+        <div class="sig-label">Authorized Lender Representative</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        window.print();
+      }, 350);
+    });
+  </script>
+</body>
+</html>`;
+  };
+
+  const handlePrint = () => {
+    const htmlContent = generatePrintableAgreementHtml();
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    try {
+      const win = window.open(url, '_blank');
+      if (win) {
+        win.focus();
+        setFallbackPrintUrl(null);
+        return;
+      }
+    } catch (e) {
+      console.warn('Agreement window.open blocked:', e);
+    }
+
+    setFallbackPrintUrl(url);
+
+    try {
+      window.print();
+    } catch (e) {
+      console.warn('Native window.print failed:', e);
+    }
+  };
+
   return (
     <div id="view-agreement" className="space-y-6 max-w-4xl mx-auto animate-in fade-in">
       {/* Action Controls (Hidden on Print) */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden no-print print-hide">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             Promissory Note & Loan Agreement
@@ -38,7 +301,7 @@ export const AgreementView: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => window.print()}
+            onClick={handlePrint}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 cursor-pointer active:scale-[0.98]"
           >
             <Printer className="w-4 h-4" />
@@ -53,6 +316,25 @@ export const AgreementView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Fallback notification if browser blocked popup */}
+      {fallbackPrintUrl && (
+        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-3.5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs print:hidden no-print print-hide">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Print Window Blocked:</span>
+            <span>Your browser blocked the print pop-up. Click the button to open and print your agreement.</span>
+          </div>
+          <a
+            href={fallbackPrintUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3.5 py-1.5 rounded-lg shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Open & Print Agreement</span>
+          </a>
+        </div>
+      )}
 
       {/* Printable Legal Agreement Document */}
       <div
